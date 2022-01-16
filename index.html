@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring Social - Design Doc</title>
+    <link rel="stylesheet" href="style/style.css">
+</head>
+
+<body>
+    <section>
+        <div class="article">
+            <h1>
+                Social Login - Spring Boot Backend + React Frontend
+            </h1>
+            <img src="assets/design-doc-cover.gif" alt="Desing Doc - Cover Photo" class="cover-photo">
+            <div id="introduction">
+                <h2>Introduction</h2>
+                <p>
+                    This is the Design Document for Authentication Client created using
+                    Spring Boot Backend and React Frontend.
+                </p>
+                <p>
+                    It elaborates the technologies and processes used to successfully enable a secure Authentication
+                    for a user. So that only the authenticated user can access protected resource.
+                </p>
+            </div>
+            <div id="technologies">
+                <h2>Technologies</h2>
+                <div class="tech-box">
+                    <div class="tech"> Spring Boot</div>
+                    <div>- Backend</div>
+                    <div class="tech">React</div>
+                    <div>- Frontend</div>
+                    <div class="tech">JSON Web Token</div>
+                    <div>- Communication Token between Client and Server</div>
+                    <div class="tech">MySQL</div>
+                    <div>- Data Storage</div>
+                </div>
+            </div>
+            <div id="overview">
+                <h2>Overview</h2>
+                <p>The application features a protected resource, which is equivalent to any the dashboard of other
+                    pages in a web application, which only authenticated user can view.</p>
+                <p>Two types of authentications are implemented:</p>
+                <ul>
+                    <li>username and password authentication</li>
+                    <li>Oauth2 authentication with Github or Google</li>
+                </ul>
+                <div id="email-password-authentication">
+                    <h3>Email and Password Authentication</h2>
+                        <p>This type of authentication is two step process. First the user has to authorize the
+                            credentials in the application's datastore. After that, the user can login with the provided
+                            email and password.</p>
+                </div>
+                <div id="oauth2-authentication">
+                    <h3>Oauth2 Authentication</h3>
+                    <p>This is a single step authentication process. For this application, the user can authentication
+                        with
+                        Github and Google, but further third party authentication providers can be added. The user just
+                        has
+                        to login with their account without any signup and the rest is handled by the Oauth2
+                        authentication
+                        provider.</p>
+                </div>
+            </div>
+            <div id="processes">
+                <h2>Processes</h2>
+                <div id="Signup">
+                    <h3>Signup</h3>
+                    <p>The new user Signup's with three credentials, namely:</p>
+                    <ul>
+                        <li>Fullname</li>
+                        <li>Email</li>
+                        <li>Password</li>
+                    </ul>
+                    <p>
+                        These credentails are submitted at the Server endpoint, <strong>/auth/signup</strong>, where
+                        these are registered in the application's users datastore. The stored credentials are userd for
+                        authenticating the user credentials when logging in.
+                    </p>
+                    <p>The password is encoded by Password Encoder before being stored into the Datastore to improve the
+                        security. This application uses Bycrypt Encoder as the password encoder, which is build into the
+                        Spring Security framework. You can swap it with any other encoder of you choice.</p>
+                    <div id="signup-conditional">
+                        <img src="assets/signup-conditional.svg" alt=signup-conditional.svg" class="full-width-img">
+                        <p>Depending on the provided signup credentials, the request can either Pass or Fail:</p>
+                        <ul>
+                            <li>
+                                <p>
+                                    <strong>Pass: </strong>The provided Email is not already registed, in which case a
+                                    new
+                                    user
+                                    record is created in the Datastore and the signup request is successful returning a
+                                    <strong>200 OK</strong> status code.
+                                </p>
+                                <img src="assets/signup-pass.svg" alt="signup-pass.svg" class="full-width-img">
+                            </li>
+                            <li>
+                                <p><strong>Fail: </strong>The provided Email is already registered. This condition
+                                    applies
+                                    if any Oauth2 signed
+                                    in accout (Github or Google) provided the same email. It results in unsuccessful
+                                    Signup
+                                    request returning <strong>400 Bad Request</strong> status code.</p>
+                                <img src="assets/signup-fail.svg" alt="signup-fail.svg" class="full-width-img">
+                            </li>
+                        </ul>
+                    </div>
+                    <p>
+                        That's it for Signup. No complicated hash is returned and stored as cookies in signup.
+                    </p>
+                </div>
+                <div id="login">
+                    <h3>Login</h3>
+                    <p>Login validates the user credentails and returns a token, which is stored by the client and is
+                        used later to authenticate for access the protected resource. Login may pass or fail depending
+                        on the user credentials. In case of failure, server returns status code <strong>403
+                            Unauthorized</strong>, whereas status code <strong>200 OK</strong> is returned along with
+                        the token if the login is successful.</p>
+                    <div id="email-password-login">
+                        <h4>Login using Email and Password</h4>
+                        <p>User POST their Email and Password to the Server endpoint, <strong>/auth/login</strong>. The
+                            server compares the provided email and password to the email and encrypted passord
+                            registered in the datastore.</p>
+                        <p>The credentials may be invalid or not even registered, the login request is failed in either
+                            case.</p>
+                        <p>If the credentials are valid, the server will generate an authentication token, <a
+                                href="https://jwt.io">JSON Web Token</a> in this case. The token is saved by the client
+                            and sent further requests to access the protected resource(s).</p>
+
+                        <img src="assets/login-conditional.svg" alt="login-conditional.svg" class="full-width-img">
+                    </div>
+                    <div id="login-with-oauth2-provider">
+                        <h4>Login with OAuth2 Provider</h4>
+                        <p>
+                            In this type of Authentication, the validation is handled by OAuth2 provider, Google and
+                            Github API in this case. The provider authenticates the user and provides the authenticated
+                            user's credentials. These are used by the server to create and return the token.
+                        </p>
+                        <img src="assets/login-oauth2.svg" alt="OAuth2 Login Process" class="full-width-img">
+                        <div id="oauth2-login-steps">
+                            <ol>
+                                <li>Client sends a <strong>GET</strong> request to
+                                    <strong>/oauth2/authorize/&lt;provider&gt;</strong>
+                                </li>
+                                <li>The request gets redirected to the chosen OAuth2 provider's url by the server, which
+                                    in this context acts as authentication client. Here the entire authentication
+                                    process is handled by the provider.</li>
+                                <li>On successful authentication, the authenticated credentials are returned to the
+                                    server.</li>
+                                <li>The server saves the new credentials in the database or updates the existing
+                                    credentials if necessary with the provided credentials.</li>
+                                <li>The save succeeds.</li>
+                                <li>Now the server encodes the credentials to generate the JSON Web Token, for
+                                    authenticating further requests to protected resource. After all this successful
+                                    processing, the Server returns a <strong>200 OK</strong> status code to the client
+                                    along with the generated token. The client stores the returned token in any form of
+                                    browser storage.</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div id="accessing-protected-resource">
+                        <h4>Accessing Protected Resource</h4>
+                        <p>
+                            The client sends the request to access protected resource, this can be page in a web
+                            application that requires authentication to access. In this example, it is the home page on
+                            client, which makes GET Request to /user/me on server to get account information. This is
+                            equivalent to viewing your profile on Facebook, for example.
+                        </p>
+                        <p>
+                            The server checks for the provided access token (JWT in this case). If the token does not
+                            exist, or it is invalid, the server returns 400 UNAUTHORIZED status code. After receiving
+                            this response, the client is redirected to authenticate with valid credentials this time.
+                            Contrary to that, if the token contains valid credentials, the server fetches stored client
+                            data from the database and returns it as a JSON object. The Client uses this data to show
+                            the profile information to the user.
+                        </p>
+                        <img src="assets/protected-resource.svg" alt="Accessing Protected Resource"
+                            class="full-width-img">
+                    </div>
+                </div>
+            </div>
+            <div class="implementation">
+                <h2>Implementation</h2>
+                <p>You can find the implementation <a href="https://github.com/zancheema/spring-social-login">here</a>.
+                </p>
+            </div>
+            <div class="divider"></div>
+            <div class="end">
+                <h2>The End</h2>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-contacts">
+            <h3>Contact</h3>
+            <a href="https://www.linkedin.com/in/zancheema/" class="social-contact">
+                <div class="social-contact-container">
+                    <img src="assets/linkedin.png" alt="Linkedin Logo" class="social-logo">
+                    <p class="social-logo-title">Linkedin</p>
+                </div>
+            </a>
+        </div>
+    </footer>
+</body>
+
+</html>
